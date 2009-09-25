@@ -1,81 +1,59 @@
 %define		_class		DB
 %define		_subclass	odbtp
-%define		_status		stable
-%define		_pearname	%{_class}_%{_subclass}
+%define		upstream_name	%{_class}_%{_subclass}
 
-Summary:	%{_pearname} - DB interface for ODBTP
-Name:		php-pear-%{_pearname}
-Version:	1.0.3
-Release:	%mkrel 8
+Summary:	DB interface for ODBTP
+Name:		php-pear-%{upstream_name}
+Version:	1.0.4
+Release:	%mkrel 1
 License:	PHP License
 Group:		Development/PHP
-Source0:	http://pear.php.net/get/%{_pearname}-%{version}.tar.bz2
 URL:		http://pear.php.net/package/DB_odbtp/
+Source0:	http://pear.php.net/get/%{upstream_name}-%{version}.tgz
 Requires(post): php-pear
 Requires(preun): php-pear
 Requires:	php-pear
 BuildArch:	noarch
-BuildRequires:	dos2unix
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRequires:	php-pear
+BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description
 DB_odbtp is a PEAR DB driver that uses the ODBTP extension to connect
 to a database. It can be used to remotely access any Win32-ODBC
 accessible database from any platform.
 
-In PEAR status of this package is: %{_status}.
-
 %prep
-
 %setup -q -c
-
-find . -type d -perm 0700 -exec chmod 755 {} \;
-find . -type f -perm 0555 -exec chmod 755 {} \;
-find . -type f -perm 0444 -exec chmod 644 {} \;
-
-for i in `find . -type d -name CVS` `find . -type f -name .cvs\*` `find . -type f -name .#\*`; do
-    if [ -e "$i" ]; then rm -rf $i; fi >&/dev/null
-done
-
-# strip away annoying ^M
-find -type f | grep -v ".gif" | grep -v ".png" | grep -v ".jpg" | xargs dos2unix -U
+mv package.xml %{upstream_name}-%{version}/%{upstream_name}.xml
 
 %install
 rm -rf %{buildroot}
 
-install -d %{buildroot}%{_datadir}/pear/%{_class}
+cd %{upstream_name}-%{version}
+pear install --nodeps --packagingroot %{buildroot} %{upstream_name}.xml
+rm -rf %{buildroot}%{_datadir}/pear/.??*
 
-install %{_pearname}-%{version}/*.php %{buildroot}%{_datadir}/pear/%{_class}
+rm -rf %{buildroot}%{_datadir}/pear/docs
+rm -rf %{buildroot}%{_datadir}/pear/tests
 
 install -d %{buildroot}%{_datadir}/pear/packages
-install -m0644 package.xml %{buildroot}%{_datadir}/pear/packages/%{_pearname}.xml
+install -m 644 %{upstream_name}.xml %{buildroot}%{_datadir}/pear/packages
 
 %post
-if [ "$1" = "1" ]; then
-	if [ -x %{_bindir}/pear -a -f %{_datadir}/pear/packages/%{_pearname}.xml ]; then
-		%{_bindir}/pear install --nodeps -r %{_datadir}/pear/packages/%{_pearname}.xml
-	fi
-fi
-if [ "$1" = "2" ]; then
-	if [ -x %{_bindir}/pear -a -f %{_datadir}/pear/packages/%{_pearname}.xml ]; then
-		%{_bindir}/pear upgrade -f --nodeps -r %{_datadir}/pear/packages/%{_pearname}.xml
-	fi
-fi
+pear install --nodeps --soft --force --register-only \
+    %{_datadir}/pear/packages/%{upstream_name}.xml >/dev/null || :
 
 %preun
-if [ "$1" = 0 ]; then
-	if [ -x %{_bindir}/pear -a -f %{_datadir}/pear/packages/%{_pearname}.xml ]; then
-		%{_bindir}/pear uninstall --nodeps -r %{_pearname}
-	fi
+if [ "$1" -eq "0" ]; then
+    pear uninstall --nodeps --ignore-errors --register-only \
+        %{pear_name} >/dev/null || :
 fi
 
 %clean
 rm -rf %{buildroot}
 
 %files
-%defattr(644,root,root,755)
-%doc %{_pearname}-%{version}/{docs,examples}
-%{_datadir}/pear/%{_class}/*.php
-%{_datadir}/pear/packages/%{_pearname}.xml
-
-
+%defattr(-,root,root)
+%doc %{upstream_name}-%{version}/docs/* %{upstream_name}-%{version}/examples
+%{_datadir}/pear/%{_class}
+%{_datadir}/pear/packages/%{upstream_name}.xml
