@@ -4,7 +4,7 @@
 
 Name:		php-pear-%{upstream_name}
 Version:	1.0.4
-Release:	%mkrel 4
+Release:	%mkrel 5
 Summary:	DB interface for ODBTP
 License:	PHP License
 Group:		Development/PHP
